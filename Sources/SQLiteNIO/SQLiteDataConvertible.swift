@@ -45,10 +45,14 @@ extension UInt64: SQLiteDataConvertible { }
 
 extension Double: SQLiteDataConvertible {
     public init?(sqliteData: SQLiteData) {
-        guard case .float(let value) = sqliteData else {
-            return nil
-        }
-        self = value
+		switch sqliteData {
+		case .float(let value):
+			self = value
+		case .integer(let value):
+			self = Double(value)
+		default:
+			return nil
+		}
     }
 
     public var sqliteData: SQLiteData? {
@@ -58,10 +62,14 @@ extension Double: SQLiteDataConvertible {
 
 extension Float: SQLiteDataConvertible {
     public init?(sqliteData: SQLiteData) {
-        guard case .float(let value) = sqliteData else {
-            return nil
-        }
-        self = Float(value)
+		switch sqliteData {
+		case .float(let value):
+			self = Float(value)
+		case .integer(let value):
+			self = Float(value)
+		default:
+			return nil
+		}
     }
 
     public var sqliteData: SQLiteData? {
