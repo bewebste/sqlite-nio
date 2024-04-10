@@ -236,7 +236,33 @@ public final class SQLiteConnection: SQLiteDatabase {
 		}
 	}
 
-    deinit {
+	public func backup(destinationPath: String) -> EventLoopFuture<Void> {
+		return self.threadPool.runIfActive(eventLoop: self.eventLoop) {
+			var destinationHandle: OpaquePointer?
+			let options = SQLITE_OPEN_CREATE | SQLITE_OPEN_READWRITE
+			var err = sqlite_nio_sqlite3_open_v2(destinationPath, &destinationHandle, options, nil)
+			guard err == SQLITE_OK, let destinationHandle else {
+				throw SQLiteError(reason: .cantOpen, message: "Could not open backup database at \(destinationPath)")
+			}
+			defer {
+				sqlite_nio_sqlite3_close(destinationHandle)
+			}
+			guard let backup = sqlite_nio_sqlite3_backup_init(destinationHandle, "main", self.handle.raw, "main") else {
+				throw SQLiteError(reason: .error, message: "Could not init backup handle")
+			}
+			repeat {
+				err = sqlite_nio_sqlite3_backup_step(backup, 5)
+				sqlite_nio_sqlite3_sleep(250)
+			} while([SQLITE_OK, SQLITE_BUSY, SQLITE_LOCKED].contains(err))
+			sqlite_nio_sqlite3_backup_finish(backup)
+			err = sqlite_nio_sqlite3_errcode(backup)
+			if err != SQLITE_OK {
+				throw SQLiteError(reason: .error, message: "Error \(err) creating backup")
+			}
+		}
+	}
+
+	deinit {
         assert(self.handle.raw == nil, "SQLiteConnection was not closed before deinitializing")
     }
 }
