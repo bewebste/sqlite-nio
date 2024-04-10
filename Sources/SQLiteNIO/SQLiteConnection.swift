@@ -251,11 +251,11 @@ public final class SQLiteConnection: SQLiteDatabase {
 				throw SQLiteError(reason: .error, message: "Could not init backup handle")
 			}
 			repeat {
-				err = sqlite_nio_sqlite3_backup_step(backup, 5)
-				sqlite_nio_sqlite3_sleep(250)
+				err = sqlite_nio_sqlite3_backup_step(backup, 50)
+				sqlite_nio_sqlite3_sleep(50)
 			} while([SQLITE_OK, SQLITE_BUSY, SQLITE_LOCKED].contains(err))
 			sqlite_nio_sqlite3_backup_finish(backup)
-			err = sqlite_nio_sqlite3_errcode(backup)
+			err = sqlite_nio_sqlite3_errcode(destinationHandle)
 			if err != SQLITE_OK {
 				throw SQLiteError(reason: .error, message: "Error \(err) creating backup")
 			}
